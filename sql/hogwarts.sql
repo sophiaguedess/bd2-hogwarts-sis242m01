@@ -770,25 +770,58 @@ ORDER BY pontos DESC;
 -- 8. CONTROLE DE ACESSO (DCL)
 -- =====================================================================
 -- Questão 39
+CREATE USER 'filch'@'localhost'      IDENTIFIED BY 'MadameNorra#1';
+CREATE USER 'mcgonagall'@'localhost' IDENTIFIED BY 'Animago#Gato1';
+CREATE USER 'dumbledore'@'localhost' IDENTIFIED BY 'Fenix#Fawkes1';
 
 -- Questão 40
+GRANT SELECT ON hogwarts.vw_placar_casas TO 'filch'@'localhost';
 
 -- Questão 41
+GRANT SELECT, INSERT ON hogwarts.registro_pontos TO 'mcgonagall'@'localhost';
+GRANT SELECT ON hogwarts.aluno       TO 'mcgonagall'@'localhost';
+GRANT SELECT ON hogwarts.vw_boletim  TO 'mcgonagall'@'localhost';
 
 -- Questão 42
+GRANT ALL PRIVILEGES ON hogwarts.* TO 'dumbledore'@'localhost' WITH GRANT OPTION;
 
 -- Questão 43
+SHOW GRANTS FOR 'filch'@'localhost';
+SHOW GRANTS FOR 'mcgonagall'@'localhost';
 
--- Questão 44
--- Resultado de cada comando:
+-- Questão 44 (conectado como filch)
+-- SELECT * FROM hogwarts.vw_placar_casas;   -- funciona
+-- SELECT * FROM hogwarts.aluno;             -- Erro 1142: SELECT command denied to user 'filch'@'localhost' for table 'aluno'
 
--- Questão 45
--- Como o trigger conseguiu atualizar a casa:
+-- Questão 45 (conectado como mcgonagall)
+-- a)
+-- INSERT INTO hogwarts.registro_pontos (id_aluno, id_prof, pontos, motivo, data_registro)
+-- VALUES (2, 1, 10, 'Ajudou um colega em Transfiguração', '2026-11-10');
+-- b)
+-- UPDATE hogwarts.casa SET pontos = 1000 WHERE id_casa = 1;   -- Erro 1142: UPDATE command denied
+-- O trigger executa com os privilégios do seu DEFINER (quem o criou, com todos os privilégios),
+-- e não com os do usuário que disparou o INSERT. Por isso consegue atualizar casa.
+-- Grifinória passa a ter 110 pontos.
 
 -- Questão 46
+REVOKE INSERT ON hogwarts.registro_pontos FROM 'mcgonagall'@'localhost';
+SHOW GRANTS FOR 'mcgonagall'@'localhost';
 
 -- Questão 47
--- Vantagem dos papéis:
+CREATE ROLE 'monitor';
+GRANT SELECT ON hogwarts.vw_boletim     TO 'monitor';
+GRANT SELECT ON hogwarts.vw_placar_casas TO 'monitor';
+CREATE USER 'percy'@'localhost' IDENTIFIED BY 'Monitor#Chefe1';
+GRANT 'monitor' TO 'percy'@'localhost';
+SET DEFAULT ROLE 'monitor' TO 'percy'@'localhost';
+-- Vantagem dos papéis: as permissões são definidas uma única vez no papel e atribuídas a
+-- vários usuários; qualquer mudança no papel vale para todos, simplificando a administração
+-- e reduzindo erros.
 
 -- Questão 48
+DROP USER 'filch'@'localhost';
+DROP USER 'mcgonagall'@'localhost';
+DROP USER 'dumbledore'@'localhost';
+DROP USER 'percy'@'localhost';
+DROP ROLE 'monitor';
 
